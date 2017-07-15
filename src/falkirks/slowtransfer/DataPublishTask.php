@@ -3,10 +3,8 @@ namespace falkirks\slowtransfer;
 
 
 use pocketmine\Player;
-use pocketmine\plugin\Plugin;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
-use shoghicp\FastTransfer\FastTransfer;
 
 class DataPublishTask extends AsyncTask{
     private $player;
@@ -62,10 +60,9 @@ class DataPublishTask extends AsyncTask{
     }
 
     public function onCompletion(Server $server){
-        $fastTransfer = $server->getPluginManager()->getPlugin("FastTransfer");
         $player = $server->getPlayer($this->player);
-        if($player instanceof Player && $fastTransfer instanceof FastTransfer && $fastTransfer->isEnabled()){
-            $fastTransfer->transferPlayer($player, $this->address, $this->port, $this->message);
+        if($player instanceof Player){
+        	$player->transfer($this->address, $this->port, $this->message);
         }
     }
 }

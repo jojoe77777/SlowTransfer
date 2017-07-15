@@ -18,26 +18,30 @@ class ServerTask extends Thread{
         $this->logger = $logger;
         $this->config = $config;
         $this->publishData = serialize([]);
-        try {
-            $this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-            socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1);
-            socket_bind($this->sock, "0.0.0.0", $this->config->get("application-port"));
-            socket_listen($this->sock, 5);
-            socket_set_block($this->sock);
-
-            $this->getLogger()->info("Server started on port " .  $this->config->get("application-port") . ".");
-            $this->start();
-        }
-        catch(\RuntimeException $e){
-            $this->getLogger()->critical("Failed to start server.");
-            $this->stop();
-        }
+        $this->start();
     }
     public function stop() {
         $this->getLogger()->info("Server stopped.");
         $this->stop = true;
     }
     public function run() {
+	    try {
+		    $this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+		    socket_set_option($this->sock, SOL_SOCKET, SO_REUSEADDR, 1);
+		    try {
+			    socket_bind($this->sock, "0.0.0.0", $this->config->get("application-port"));
+		    } catch (\ErrorException $e){
+			    socket_bind($this->sock, "0.0.0.0", $this->config->get("fallback-port"));
+		    }
+		    socket_listen($this->sock, 5);
+		    socket_set_block($this->sock);
+
+		    $this->getLogger()->info("Server started on port " .  $this->config->get("application-port") . ".");
+	    } catch(\ErrorException $e){
+		    $this->getLogger()->critical("Failed to start server.");
+		    $this->stop();
+		    return;
+	    }
         $this->registerClassLoader();
         while($this->stop === false) {
             $publishData = [];
